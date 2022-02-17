@@ -9,7 +9,6 @@ import (
 
 // This is a helper function to emit a more helpful error code.
 func ExecCommand(command string, arg ...string) (string, error) {
-	fmt.Println(command, arg)
 	cmd := exec.Command(command, arg...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer

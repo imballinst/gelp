@@ -1,6 +1,7 @@
 package gelp
 
 import (
+	"io/ioutil"
 	"os"
 )
 
@@ -27,4 +28,15 @@ func WriteToFile(filePath string, content string) error {
 	f.Write(str)
 
 	return nil
+}
+
+func ReadFileContent(filePath string) (string, error) {
+	var content string
+
+	byteContent, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return content, err
+	}
+
+	return string(byteContent), nil
 }
