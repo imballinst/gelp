@@ -13,7 +13,7 @@ var rootCmd = &cobra.Command{
 	Long: `Committed changes in the wrong branch? Want to clean-up branch post-merge? 
 Then, gelp might be a good tool for these use-cases!`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Run(versionCmd, args)
+		cmd.Help()
 	},
 }
 
