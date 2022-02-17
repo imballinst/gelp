@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 // This is a helper function to emit a more helpful error code.
 func ExecCommand(command string, arg ...string) (string, error) {
+	fmt.Println(command, arg)
 	cmd := exec.Command(command, arg...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
@@ -15,7 +17,7 @@ func ExecCommand(command string, arg ...string) (string, error) {
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 
-	outString := out.String()
+	outString := strings.Trim(out.String(), "\n")
 	if err != nil {
 		// Error logging.
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())

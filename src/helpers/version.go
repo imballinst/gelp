@@ -5,12 +5,12 @@ import (
 )
 
 func EmitVersion() {
-	lastRevision, err := ExecCommand("git", "rev-list --tags --max-count=1")
+	lastRevision, err := ExecCommand("git", "rev-list", "--tags", "--max-count=1")
 	if err != nil {
 		panic(err)
 	}
 
-	lastTag, err := ExecCommand("git", "describe --tags "+lastRevision)
+	lastTag, err := ExecCommand("git", "describe", "--tags", lastRevision)
 	if err != nil {
 		panic(err)
 	}
