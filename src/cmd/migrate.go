@@ -3,8 +3,10 @@ package gelp
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	helpers "github.com/imballinst/gelp/src/helpers"
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +32,19 @@ wrong branch will be removed.`,
 			panic(err)
 		}
 
-		fmt.Println(gitLog)
+		prompt := promptui.Select{
+			Label: "Select base commit",
+			Items: strings.Split(gitLog, "\n"),
+		}
+
+		_, result, err := prompt.Run()
+
+		if err != nil {
+			fmt.Printf("Prompt failed %v\n", err)
+			return
+		}
+
+		fmt.Printf("You choose %q\n", result)
 	},
 }
 
