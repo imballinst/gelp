@@ -25,7 +25,7 @@ wrong branch will be removed.`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		gitLog, err := helpers.ExecCommand("git", "log")
+		gitLog, err := helpers.ExecCommand("git", "log", "--oneline")
 		if err != nil {
 			panic(err)
 		}
