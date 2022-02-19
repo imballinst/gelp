@@ -2,47 +2,54 @@
 // Testing this in unit test is a pain.
 package gelp
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
-func Migrate(targetBranch string, baseBranch string, pickedCommit string) (string, error) {
-	var output string
+func Migrate(targetBranch string, baseBranch string, pickedCommit string) error {
+	commitArray := strings.SplitN(pickedCommit, " ", 2)
+	commitRevision := commitArray[0]
 
+	fmt.Println("git migrate:", "Getting current branch...")
 	currentBranchOutput, err := ExecCommand("git rev-parse --abbrev-ref HEAD")
 	if err != nil {
-		return output, err
+		return err
 	}
 
-	output = fmt.Sprintln(output + currentBranchOutput)
 	// Check if the branch exists.
-	revisionOutput, err := ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
+	fmt.Println("git migrate:", (fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)))
+	_, err = ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
+
 	if err != nil {
-		return output, err
-	}
-
-	output = fmt.Sprintln(output + revisionOutput)
-	// Create a new branch, if the target branch doesn't exist.
-	if output == "" {
-		checkoutOutput, err := ExecCommand(fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
+		// Create a new branch, if the target branch doesn't exist.
+		fmt.Println("git migrate: Branch doesn't exist, creating one...")
+		fmt.Println("git migrate:", (fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch)))
+		_, err = ExecCommand(fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
 		if err != nil {
-			return output, err
+			return err
 		}
-
-		output = fmt.Sprintln(output + checkoutOutput)
+	} else {
+		// Branch exists.
+		_, err = ExecCommand(fmt.Sprintf("git checkout %s", targetBranch))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Cherry-pick the commit.
-	cherrypickOutput, err := ExecCommand(fmt.Sprintf("git cherry-pick %s", pickedCommit))
+	fmt.Println("git migrate:", (fmt.Sprintf("git cherry-pick %s", commitRevision)))
+	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s", commitRevision))
 	if err != nil {
-		return output, err
+		return err
 	}
 
-	output = fmt.Sprintln(output + cherrypickOutput)
 	// Go back to the old branch.
-	oldBranchOutput, err := ExecCommand(fmt.Sprintf("git switch %s", currentBranchOutput))
+	fmt.Println("git migrate:", (fmt.Sprintf("git switch %s", currentBranchOutput)))
+	_, err = ExecCommand(fmt.Sprintf("git switch %s", currentBranchOutput))
 	if err != nil {
-		return output, err
+		return err
 	}
 
-	output = fmt.Sprintln(output + oldBranchOutput)
-	return output, nil
+	return nil
 }
