@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fatih/color"
 	helpers "github.com/imballinst/gelp/src/helpers"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ using "git rebase" or "git reset", depending on the scenario.`,
    %s
 
 2) Migrate to "hotfix" using base branch "dev"
-   %s`, helpers.GetBlueText("gelp migrate test-branch"), helpers.GetBlueText("gelp migrate hotfix --base dev")),
+   %s`, color.BlueString("gelp migrate test-branch"), color.BlueString("gelp migrate hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("`git migrate` command needs 1 argument: target_branch")
@@ -46,9 +47,10 @@ using "git rebase" or "git reset", depending on the scenario.`,
 		}
 
 		// Select the start commit.
+		gitLogArray := strings.Split(gitLog, "\n")
 		prompt := promptui.Select{
 			Label: "Select start commit to migrate",
-			Items: strings.Split(gitLog, "\n"),
+			Items: gitLogArray,
 		}
 
 		_, startCommit, err := prompt.Run()
@@ -56,10 +58,19 @@ using "git rebase" or "git reset", depending on the scenario.`,
 			panic(err)
 		}
 
+		// Colorize the selected commit.
+		endGitLogArray := gitLogArray
+
+		for i, commit := range endGitLogArray {
+			if commit == startCommit {
+				endGitLogArray[i] = color.WhiteString(commit)
+			}
+		}
+
 		// Select the end commit.
 		prompt = promptui.Select{
 			Label: "Select end commit to migrate",
-			Items: strings.Split(gitLog, "\n"),
+			Items: endGitLogArray,
 		}
 
 		_, endCommit, err := prompt.Run()
