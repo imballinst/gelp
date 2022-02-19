@@ -13,15 +13,9 @@ func Migrate(targetBranch string, baseBranch string, startCommit string, endComm
 	endCommitArray := strings.SplitN(endCommit, " ", 2)
 	endCommitRevision := endCommitArray[0]
 
-	fmt.Println("git migrate:", "Getting current branch...")
-	currentBranchOutput, err := ExecCommand("git rev-parse --abbrev-ref HEAD")
-	if err != nil {
-		return err
-	}
-
 	// Check if the branch exists.
 	fmt.Println("git migrate:", (fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)))
-	_, err = ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
+	_, err := ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
 
 	if err != nil {
 		// Create a new branch, if the target branch doesn't exist.
