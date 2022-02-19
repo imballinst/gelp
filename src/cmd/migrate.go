@@ -45,17 +45,29 @@ using "git rebase" or "git reset", depending on the scenario.`,
 			panic(err)
 		}
 
+		// Select the start commit.
 		prompt := promptui.Select{
-			Label: "Select base commit",
+			Label: "Select start commit to migrate",
 			Items: strings.Split(gitLog, "\n"),
 		}
 
-		_, pickedCommit, err := prompt.Run()
+		_, startCommit, err := prompt.Run()
 		if err != nil {
 			panic(err)
 		}
 
-		helpers.Migrate(args[0], Base, pickedCommit)
+		// Select the end commit.
+		prompt = promptui.Select{
+			Label: "Select end commit to migrate",
+			Items: strings.Split(gitLog, "\n"),
+		}
+
+		_, endCommit, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+
+		helpers.Migrate(args[0], Base, startCommit, endCommit)
 	},
 }
 

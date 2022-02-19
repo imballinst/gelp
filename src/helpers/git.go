@@ -7,9 +7,11 @@ import (
 	"strings"
 )
 
-func Migrate(targetBranch string, baseBranch string, pickedCommit string) error {
-	commitArray := strings.SplitN(pickedCommit, " ", 2)
-	commitRevision := commitArray[0]
+func Migrate(targetBranch string, baseBranch string, startCommit string, endCommit string) error {
+	startCommitArray := strings.SplitN(startCommit, " ", 2)
+	startCommitRevision := startCommitArray[0]
+	endCommitArray := strings.SplitN(endCommit, " ", 2)
+	endCommitRevision := endCommitArray[0]
 
 	fmt.Println("git migrate:", "Getting current branch...")
 	currentBranchOutput, err := ExecCommand("git rev-parse --abbrev-ref HEAD")
@@ -37,9 +39,9 @@ func Migrate(targetBranch string, baseBranch string, pickedCommit string) error 
 		}
 	}
 
-	// Cherry-pick the commit.
-	fmt.Println("git migrate:", (fmt.Sprintf("git cherry-pick %s", commitRevision)))
-	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s", commitRevision))
+	// Cherry-pick the commits.
+	fmt.Println("git migrate:", (fmt.Sprintf("git cherry-pick %s..%s", endCommitRevision, startCommitRevision)))
+	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s..%s", endCommitRevision, startCommitRevision))
 	if err != nil {
 		return err
 	}
