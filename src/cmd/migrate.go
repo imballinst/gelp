@@ -24,10 +24,10 @@ What this command does is:
   create a copy of that branch with the name "backup--{branch_name}"
 - Checkout to that branch
 - Cherry pick the selected commit(s)
-- Go back to the old branch
 
 The old branch will not be touched. The wrong commits you can resolve yourselves
-using "git rebase" or "git reset", depending on the scenario.`,
+using "git rebase" or "git reset", depending on the scenario. As an important note,
+"gelp migrate" doesn't automatically resolve conflicts.`,
 	Example: fmt.Sprintf(`1) Migrate to "test-branch" using base branch "main"
    %s
 

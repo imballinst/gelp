@@ -46,12 +46,5 @@ func Migrate(targetBranch string, baseBranch string, startCommit string, endComm
 		return err
 	}
 
-	// Go back to the old branch.
-	fmt.Println("git migrate:", (fmt.Sprintf("git switch %s", currentBranchOutput)))
-	_, err = ExecCommand(fmt.Sprintf("git switch %s", currentBranchOutput))
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
