@@ -11,10 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var MigrateBaseBranch string
+var SquashNewBaseBranch string
 
 // Root command.
-var migrateCmd = &cobra.Command{
+var squashNewCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Migrate from one branch to another",
 	Long: `Migrate is useful if you are working on a wrong branch.
@@ -41,6 +41,8 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		// TODO(imballinst): this will be used later.
+		// currentBranchOutput, err := ExecCommand("git rev-parse --abbrev-ref HEAD")
 		gitLog, err := helpers.ExecCommand("git log --oneline")
 		if err != nil {
 			panic(err)
@@ -78,10 +80,10 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 			panic(err)
 		}
 
-		helpers.Migrate(args[0], MigrateBaseBranch, startCommit, endCommit)
+		helpers.Migrate(args[0], SquashNewBaseBranch, startCommit, endCommit)
 	},
 }
 
 func init() {
-	migrateCmd.Flags().StringVarP(&MigrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	squashNewCmd.Flags().StringVarP(&SquashNewBaseBranch, "base", "b", "main", "The base branch used for the new branch")
 }
