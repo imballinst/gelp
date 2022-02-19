@@ -2,32 +2,37 @@ package gelp
 
 import "fmt"
 
-type GitRunner interface {
-	Migrate(targetBranch string, baseBranch string, pickedCommit string) ([]byte, error)
-}
-type RealGitRunner struct{}
-
-var gitRunner GitRunner
-
-func (r RealGitRunner) Migrate(targetBranch string, baseBranch string, pickedCommit string) ([]byte, error) {
+func Migrate(targetBranch string, baseBranch string, pickedCommit string) error {
 	currentBranch, err := ExecCommand("git rev-parse --abbrev-ref HEAD")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Check if the branch exists.
 	output, err := ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create a new branch, if the target branch doesn't exist.
 	if output == "" {
-		_, err = ExecCommand(fmt.Sprintf("git switch %s %s", targetBranch, baseBranch))
+		_, err = ExecCommand(fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
+		if err != nil {
+			return err
+		}
 	}
 
-	// Go to the target branch.
-
 	// Cherry-pick the commit.
-	_, err = ExecCommand()
+	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s", pickedCommit))
+	if err != nil {
+		return err
+	}
+
+	// Go back to the old branch.
+	_, err = ExecCommand(fmt.Sprintf("git switch %s", currentBranch))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

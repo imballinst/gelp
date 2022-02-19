@@ -17,17 +17,30 @@ var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Migrate from one branch to another",
 	Long: `Migrate is useful if you are working on a wrong branch.
-Using it, you can move to the correct branch, along with your new changes. The changes in the
-wrong branch will be removed.`,
+What this command does is:
+
+- Create a new branch if the target branch doesn't exist, or 
+  create a copy of that branch with the name "backup--{branch_name}"
+- Checkout to that branch
+- Cherry pick the selected commit(s)
+- Go back to the old branch
+
+The old branch will not be touched. The wrong commits you can resolve yourselves
+using "git rebase" or "git reset", depending on the scenario.`,
+	Example: fmt.Sprintf(`1) Migrate to "test-branch" using base branch "main"
+   %s
+
+2) Migrate to "hotfix" using base branch "dev"
+   %s`, helpers.GetBlueText("gelp migrate test-branch"), helpers.GetBlueText("gelp migrate hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
+		if len(args) < 1 && Base == "" {
 			return errors.New("`git migrate` command needs 1 argument: target_branch")
 		}
 
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		gitLog, err := helpers.ExecCommand("git", "log", "--oneline")
+		gitLog, err := helpers.ExecCommand("git log --oneline")
 		if err != nil {
 			panic(err)
 		}
@@ -38,25 +51,12 @@ wrong branch will be removed.`,
 		}
 
 		_, result, err := prompt.Run()
-
 		if err != nil {
 			panic(err)
 		}
 
-		currentBranch, err := helpers.ExecCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Printf("Current branch: %q\n", currentBranch)
-		fmt.Printf("You choose %q\n", result)
-		out, err := helpers.ExecCommand("echo", currentBranch)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(out)
-		// _, err = helpers.ExecCommand("git")
+		fmt.Println(result)
+		// helpers.Migrate()
 	},
 }
 
