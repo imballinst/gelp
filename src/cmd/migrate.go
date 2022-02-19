@@ -33,7 +33,7 @@ using "git rebase" or "git reset", depending on the scenario.`,
 2) Migrate to "hotfix" using base branch "dev"
    %s`, helpers.GetBlueText("gelp migrate test-branch"), helpers.GetBlueText("gelp migrate hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 && Base == "" {
+		if len(args) < 1 {
 			return errors.New("`git migrate` command needs 1 argument: target_branch")
 		}
 
@@ -50,13 +50,12 @@ using "git rebase" or "git reset", depending on the scenario.`,
 			Items: strings.Split(gitLog, "\n"),
 		}
 
-		_, result, err := prompt.Run()
+		_, pickedCommit, err := prompt.Run()
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(result)
-		// helpers.Migrate()
+		helpers.Migrate(args[0], Base, pickedCommit)
 	},
 }
 
