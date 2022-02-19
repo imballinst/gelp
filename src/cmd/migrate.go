@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Squash bool
+var Base string
 
 // Root command.
 var migrateCmd = &cobra.Command{
@@ -40,14 +40,26 @@ wrong branch will be removed.`,
 		_, result, err := prompt.Run()
 
 		if err != nil {
-			fmt.Printf("Prompt failed %v\n", err)
-			return
+			panic(err)
 		}
 
+		currentBranch, err := helpers.ExecCommand("git", "rev-parse", "--abbrev-ref", "HEAD")
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Current branch: %q\n", currentBranch)
 		fmt.Printf("You choose %q\n", result)
+		out, err := helpers.ExecCommand("echo", currentBranch)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println(out)
+		// _, err = helpers.ExecCommand("git")
 	},
 }
 
 func init() {
-	// migrateCmd.Flags().BoolVarP(&Squash, "version", "v", false, "Show current gelp version")
+	migrateCmd.Flags().StringVarP(&Base, "base", "b", "main", "The base branch used for the new branch")
 }

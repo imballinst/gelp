@@ -8,8 +8,10 @@ import (
 )
 
 // This is a helper function to emit a more helpful error code.
-func ExecCommand(command string, arg ...string) (string, error) {
-	cmd := exec.Command(command, arg...)
+func ExecCommand(commandWithArgs string) (string, error) {
+	array := strings.Split(commandWithArgs, " ")
+
+	cmd := exec.Command(array[0], array[1:]...)
 	var out bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &out
