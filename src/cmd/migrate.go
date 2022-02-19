@@ -63,7 +63,7 @@ using "git rebase" or "git reset", depending on the scenario.`,
 
 		for i, commit := range endGitLogArray {
 			if commit == startCommit {
-				endGitLogArray[i] = color.WhiteString(commit)
+				endGitLogArray[i] = color.New(color.BgWhite).Sprint(commit)
 			}
 		}
 

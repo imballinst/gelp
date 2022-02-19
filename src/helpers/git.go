@@ -41,7 +41,7 @@ func Migrate(targetBranch string, baseBranch string, startCommit string, endComm
 
 	// Cherry-pick the commits.
 	fmt.Println("git migrate:", (fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision)))
-	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s..%s", endCommitRevision, startCommitRevision))
+	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision))
 	if err != nil {
 		return err
 	}
