@@ -13,31 +13,72 @@ func Migrate(targetBranch string, baseBranch string, startCommit string, endComm
 	endCommitArray := strings.SplitN(endCommit, " ", 2)
 	endCommitRevision := endCommitArray[0]
 
+	// Check/create and checkout to that branch.
+	err := checkoutOtherBranchOrCreateNew("migrate", targetBranch, baseBranch)
+	if err != nil {
+		return err
+	}
+
+	// Cherry-pick the commits.
+	_, err = doAndLog("migrate", fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Squashto(targetBranch string, baseBranch string) error {
+	currentBranchOutput, err := doAndLog("squashto", "git rev-parse --abbrev-ref HEAD")
+	if err != nil {
+		return err
+	}
+
+	// Check/create and checkout to that branch.
+	err = checkoutOtherBranchOrCreateNew("squashto", targetBranch, baseBranch)
+	if err != nil {
+		return err
+	}
+
+	// Squash merge.
+	_, err = doAndLog("squashto", fmt.Sprintf("git merge --squash %s", currentBranchOutput))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Helper functions.
+func doAndLog(label string, command string) (string, error) {
+	log(label, command)
+	return ExecCommand(command)
+}
+
+func log(label string, text string) {
+	fmt.Printf("gelp %s: %s\n", label, text)
+}
+
+func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranch string) error {
 	// Check if the branch exists.
-	fmt.Println("git migrate:", (fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)))
-	_, err := ExecCommand(fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch))
+	verifyBranchExistsCommand := fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)
+	_, err := doAndLog(label, verifyBranchExistsCommand)
 
 	if err != nil {
+		log(label, "Branch doesn't exist, creating one...")
+
 		// Create a new branch, if the target branch doesn't exist.
-		fmt.Println("git migrate: Branch doesn't exist, creating one...")
-		fmt.Println("git migrate:", (fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch)))
-		_, err = ExecCommand(fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
+		createNewBranchCommand := fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch)
+		_, err = doAndLog(label, createNewBranchCommand)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Branch exists.
-		_, err = ExecCommand(fmt.Sprintf("git checkout %s", targetBranch))
+		_, err = doAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
 		if err != nil {
 			return err
 		}
-	}
-
-	// Cherry-pick the commits.
-	fmt.Println("git migrate:", (fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision)))
-	_, err = ExecCommand(fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision))
-	if err != nil {
-		return err
 	}
 
 	return nil

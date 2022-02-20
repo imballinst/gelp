@@ -35,7 +35,7 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
    %s`, color.BlueString("gelp migrate test-branch"), color.BlueString("gelp migrate hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("`git migrate` command needs 1 argument: target_branch")
+			return errors.New("`gelp migrate` command needs 1 argument: target_branch")
 		}
 
 		return nil
@@ -78,7 +78,10 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 			panic(err)
 		}
 
-		helpers.Migrate(args[0], MigrateBaseBranch, startCommit, endCommit)
+		err = helpers.Migrate(args[0], MigrateBaseBranch, startCommit, endCommit)
+		if err != nil {
+			panic(err)
+		}
 	},
 }
 
