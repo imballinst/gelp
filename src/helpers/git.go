@@ -7,20 +7,18 @@ import (
 	"strings"
 )
 
-func Migrate(targetBranch string, baseBranch string, startCommit string, endCommit string) error {
-	startCommitArray := strings.SplitN(startCommit, " ", 2)
-	startCommitRevision := startCommitArray[0]
-	endCommitArray := strings.SplitN(endCommit, " ", 2)
-	endCommitRevision := endCommitArray[0]
-
+// Commands used in the CLI.
+func Migrate(targetBranch string, baseBranch string, revisions []string) error {
 	// Check/create and checkout to that branch.
 	err := checkoutOtherBranchOrCreateNew("migrate", targetBranch, baseBranch)
 	if err != nil {
 		return err
 	}
 
+	cherrypickCommand := "git cherry-pick " + strings.Join(revisions, " ")
+
 	// Cherry-pick the commits.
-	_, err = doAndLog("migrate", fmt.Sprintf("git cherry-pick %s^..%s", startCommitRevision, endCommitRevision))
+	_, err = doAndLog("migrate", cherrypickCommand)
 	if err != nil {
 		return err
 	}
@@ -47,6 +45,55 @@ func Squashto(targetBranch string, baseBranch string) error {
 	}
 
 	return nil
+}
+
+// Semi-helper functions. Used to create arguments passed to functions above.
+// These functions are exported so that we can compose the functions better.
+//
+// We are using this command: "git log --date=iso-strict --pretty='format:%cd %h %s'".
+// Which outputs (for example):
+// 2022-02-20T11:42:57+07:00 099e593 feature: add gelp squashto (#2)
+// 2022-02-19T19:28:03+07:00 3b16259 checkpoint for squash new
+// 2022-02-19T19:05:00+07:00 f38d9ee remove unused
+func ExtractRevisionAndTitleFromCommits(commits []string, isWithDate bool) []string {
+	var result []string
+
+	for _, commit := range commits {
+		revisionAndMessage := strings.SplitN(commit, " ", 3)
+		var entry string
+		var commitTitle string
+
+		// Check the length of the split string.
+		// There can be a chance where the commit title is empty.
+		if len(revisionAndMessage) == 2 {
+			// Has only 2 segments (the commit title is empty).
+			commitTitle = "(no commit title)"
+		} else {
+			// Has 3 segments.
+			commitTitle = revisionAndMessage[2]
+		}
+
+		// Depending on the `isWithDate` flag, change entry format.
+		if isWithDate {
+			entry = fmt.Sprintf("%s: %s (%s)", revisionAndMessage[1], commitTitle, revisionAndMessage[0])
+		} else {
+			entry = fmt.Sprintf("%s: %s", revisionAndMessage[1], commitTitle)
+		}
+
+		result = append(result, entry)
+	}
+
+	return result
+}
+
+func PickRevisionsFromCommits(commits []string, indexes []int) []string {
+	var revisions []string
+
+	for _, index := range indexes {
+		revisions = append(revisions, commits[index])
+	}
+
+	return revisions
 }
 
 // Helper functions.
