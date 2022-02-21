@@ -11,7 +11,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var MigrateBaseBranch string
+// Flag types.
+// Using camel-case because this is local.
+type migrateModeType int
+
+const (
+	modeSingle migrateModeType = iota + 1
+	modeMultiple
+	modeRange
+)
+
+// Flags.
+var migrateBaseBranch string
+var migrateMode string
 
 // Root command.
 var migrateCmd = &cobra.Command{
@@ -41,44 +53,102 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		// Validate flag.
+		parsedMode, err := parseMigrateMode(migrateMode)
+		if err != nil {
+			panic(err)
+		}
+
+		// Get list of commits.
 		gitLog, err := helpers.ExecCommand("git log --oneline")
 		if err != nil {
 			panic(err)
 		}
-
-		// Select the start commit.
 		gitLogArray := strings.Split(gitLog, "\n")
-		prompt := promptui.Select{
-			Label: "Select start commit to migrate",
-			Items: gitLogArray,
-		}
 
-		_, startCommit, err := prompt.Run()
-		if err != nil {
-			panic(err)
-		}
+		// Start picking commits.
+		var pickedIndexes []int
 
-		// Colorize the selected commit.
-		endGitLogArray := gitLogArray
+		switch parsedMode {
+		case modeMultiple:
+			{
+				// If it is "multiple", we append the "Finish picking commits" option.
+				gitLogArray = append([]string{"-- Finish picking commits --"}, gitLogArray...)
+				prompt := promptui.Select{
+					Label: "Select commits to migrate (picked commits will be reordered by date)",
+					Items: gitLogArray,
+				}
 
-		for i, commit := range endGitLogArray {
-			if commit == startCommit {
-				endGitLogArray[i] = color.New(color.BgWhite).Sprint(commit)
+				// Repeat picking commits until the first index is chosen.
+				var pickedIndex int = -1
+
+				for pickedIndex != 0 {
+					pickedIndex, _, err = prompt.Run()
+					if err != nil {
+						panic(err)
+					}
+
+					if pickedIndex != 0 {
+						// Only append if the picked index is not 0 (the "Finish picking commits" option).
+						pickedIndexes = append(pickedIndexes, pickedIndex)
+					}
+				}
+
+				pickedIndexes = helpers.GetUniqueIntegers(pickedIndexes)
+			}
+		case modeSingle:
+			{
+				// Select a single commit.
+				prompt := promptui.Select{
+					Label: "Select a commit to migrate",
+					Items: gitLogArray,
+				}
+
+				pickedIndex, _, err := prompt.Run()
+				if err != nil {
+					panic(err)
+				}
+
+				pickedIndexes = append(pickedIndexes, pickedIndex)
+			}
+		case modeRange:
+			{
+				// Select the start commit.
+				prompt := promptui.Select{
+					Label: "Select the start commit",
+					Items: gitLogArray,
+				}
+
+				startCommitIndex, _, err := prompt.Run()
+				if err != nil {
+					panic(err)
+				}
+
+				// Select the end commit.
+				prompt = promptui.Select{
+					Label: "Select the end commit",
+					Items: gitLogArray,
+				}
+
+				endCommitIndex, _, err := prompt.Run()
+				if err != nil {
+					panic(err)
+				}
+
+				// Validate the picked options.
+				if startCommitIndex <= endCommitIndex {
+					panic(errors.New("start commit should be older than the end commit"))
+				}
+
+				pickedIndexes = helpers.GetRangeArrayFromTwoIntegers(startCommitIndex, endCommitIndex)
 			}
 		}
 
-		// Select the end commit.
-		prompt = promptui.Select{
-			Label: "Select end commit to migrate",
-			Items: endGitLogArray,
-		}
+		// Extract commits from the picked indexes.
+		revisions := helpers.PickRevisionsFromCommits(gitLogArray, pickedIndexes)
 
-		_, endCommit, err := prompt.Run()
-		if err != nil {
-			panic(err)
-		}
-
-		err = helpers.Migrate(args[0], MigrateBaseBranch, startCommit, endCommit)
+		// Migrate.
+		err = helpers.Migrate(args[0], migrateBaseBranch, revisions)
 		if err != nil {
 			panic(err)
 		}
@@ -86,5 +156,22 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 }
 
 func init() {
-	migrateCmd.Flags().StringVarP(&MigrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	migrateCmd.Flags().StringVarP(&migrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	migrateCmd.Flags().StringVarP(&migrateMode, "mode", "m", "single", "The commit picking mode: single, multiple, or range. Defaults to single.")
+}
+
+// Helper functions.
+var migrateModeMap = map[string]migrateModeType{
+	"single":   modeSingle,
+	"multiple": modeMultiple,
+	"range":    modeRange,
+}
+
+func parseMigrateMode(mode string) (migrateModeType, error) {
+	result, ok := migrateModeMap[mode]
+	if !ok {
+		return -1, errors.New("not found")
+	}
+
+	return result, nil
 }
