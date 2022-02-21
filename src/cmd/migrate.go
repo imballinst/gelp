@@ -3,6 +3,7 @@ package gelp
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -143,6 +144,11 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 				pickedIndexes = helpers.GetRangeArrayFromTwoIntegers(startCommitIndex, endCommitIndex)
 			}
 		}
+
+		// Sort the indexes from old to new (the bigger the index, the older they are).
+		sort.Slice(pickedIndexes, func(i, j int) bool {
+			return pickedIndexes[i] > pickedIndexes[j]
+		})
 
 		// Extract commits from the picked indexes.
 		revisions := helpers.PickRevisionsFromCommits(gitLogArray, pickedIndexes)
