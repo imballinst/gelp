@@ -63,14 +63,17 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		}
 
 		// Get list of commits.
-		gitLog, err := helpers.ExecCommand("git log --oneline")
+		gitLog, err := helpers.ExecCommand("git log --date=iso-strict --pretty='format:%cd %h %s'")
 		if err != nil {
 			panic(err)
 		}
 		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits(strings.Split(gitLog, "\n"), migrateWithDate)
 
 		// Use prompt to get inputs, then resolve the commits.
-		revisions := ResolveRevisionsFromMigratePrompt(gitLogArray, parsedMode, nil)
+		revisions, err := ResolveRevisionsFromMigratePrompt(gitLogArray, parsedMode, nil)
+		if err != nil {
+			panic(err)
+		}
 
 		// Migrate.
 		err = helpers.Migrate(args[0], migrateBaseBranch, revisions)
@@ -87,33 +90,45 @@ func init() {
 }
 
 // Semi-helper functions.
-func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateModeType, reader io.ReadCloser) []string {
+func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateModeType, reader []io.ReadCloser) ([]string, error) {
 	// Start picking commits.
 	var pickedIndexes []int
+	var currentReader io.ReadCloser
+	currentReaderIdx := 0
+
+	if reader != nil {
+		currentReader = reader[currentReaderIdx]
+	}
 
 	switch parsedMode {
 	case MigrateModeMultiple:
 		{
 			// If it is "multiple", we append the "Finish picking commits" option.
 			gitLogArray = append([]string{"-- Finish picking commits --"}, gitLogArray...)
-			prompt := promptui.Select{
-				Label: "Select commits to migrate (picked commits will be reordered by date)",
-				Items: gitLogArray,
-				Stdin: reader,
-			}
 
-			// Repeat picking commits until the first index is chosen.
-			var pickedIndex int = -1
-
-			for pickedIndex != 0 {
+			for {
+				prompt := promptui.Select{
+					Label: "Select commits to migrate (picked commits will be reordered by date and deduplicated)",
+					Items: gitLogArray,
+					Stdin: currentReader,
+				}
 				pickedIndex, _, err := prompt.Run()
+
 				if err != nil {
-					panic(err)
+					return nil, err
 				}
 
 				if pickedIndex != 0 {
 					// Only append if the picked index is not 0 (the "Finish picking commits" option).
 					pickedIndexes = append(pickedIndexes, pickedIndex)
+				} else {
+					// When picked index is 0, break out from the loop.
+					break
+				}
+
+				if reader != nil && currentReaderIdx+1 < len(reader) {
+					currentReaderIdx++
+					currentReader = reader[currentReaderIdx]
 				}
 			}
 
@@ -125,12 +140,12 @@ func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateM
 			prompt := promptui.Select{
 				Label: "Select a commit to migrate",
 				Items: gitLogArray,
-				Stdin: reader,
+				Stdin: currentReader,
 			}
 
 			pickedIndex, _, err := prompt.Run()
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
 			pickedIndexes = append(pickedIndexes, pickedIndex)
@@ -139,31 +154,36 @@ func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateM
 		{
 			// Select the start commit.
 			prompt := promptui.Select{
-				Label: "Select the start commit",
+				Label: "Select the start commit (order doesn't matter)",
 				Items: gitLogArray,
-				Stdin: reader,
+				Stdin: currentReader,
 			}
 
 			startCommitIndex, _, err := prompt.Run()
 			if err != nil {
-				panic(err)
+				return nil, err
+			}
+
+			// Increment the reader.
+			if reader != nil {
+				currentReader = reader[currentReaderIdx+1]
 			}
 
 			// Select the end commit.
 			prompt = promptui.Select{
-				Label: "Select the end commit",
+				Label: "Select the end commit (order doesn't matter)",
 				Items: gitLogArray,
-				Stdin: reader,
+				Stdin: currentReader,
 			}
 
 			endCommitIndex, _, err := prompt.Run()
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 
-			// Validate the picked options.
+			// Switch the index, if the index is bigger.
 			if startCommitIndex <= endCommitIndex {
-				panic(errors.New("start commit should be older than the end commit"))
+				startCommitIndex, endCommitIndex = endCommitIndex, startCommitIndex
 			}
 
 			pickedIndexes = helpers.GetRangeArrayFromTwoIntegers(startCommitIndex, endCommitIndex)
@@ -176,7 +196,7 @@ func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateM
 	})
 
 	// Extract commits from the picked indexes.
-	return helpers.PickRevisionsFromCommits(gitLogArray, pickedIndexes)
+	return helpers.PickRevisionsFromCommits(gitLogArray, pickedIndexes), nil
 }
 
 // Helper functions.

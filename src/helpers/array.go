@@ -6,7 +6,7 @@ func GetUniqueIntegers(values []int) []int {
 
 	for _, val := range values {
 		_, doesntExist := includedInts[val]
-		if doesntExist {
+		if !doesntExist {
 			includedInts[val] = true
 			result = append(result, val)
 		}
@@ -17,11 +17,16 @@ func GetUniqueIntegers(values []int) []int {
 
 func GetRangeArrayFromTwoIntegers(start, end int) []int {
 	var rangeArray []int
-	i := start
+	bigger, smaller := start, end
+	if bigger < smaller {
+		bigger, smaller = smaller, bigger
+	}
 
-	for i <= end {
+	i := bigger
+
+	for i >= smaller {
 		rangeArray = append(rangeArray, i)
-		i++
+		i--
 	}
 
 	return rangeArray
