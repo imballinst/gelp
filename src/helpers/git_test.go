@@ -50,17 +50,17 @@ func TestExtractRevisionAndTitleFromCommits(t *testing.T) {
 
 func TestPickRevisionsFromCommits(t *testing.T) {
 	commits := []string{
-		"2022-02-20T11:42:57+07:00 099e593 feature: add gelp squashto (#2)",
-		"2022-02-19T19:28:03+07:00 3b16259 checkpoint for squash new",
-		"2022-02-19T19:05:00+07:00 f38d9ee remove unused",
-		"2022-02-19T18:05:00+07:00 asd123", // Empty commit message, intentionally tested.
+		"099e593: feature: add gelp squashto (#2) (2022-02-20T11:42:57+07:00)",
+		"3b16259: checkpoint for squash new (2022-02-19T19:28:03+07:00)",
+		"f38d9ee: remove unused (2022-02-19T19:05:00+07:00)",
+		"asd123: (no commit title) (2022-02-19T18:05:00+07:00)",
 	}
 	indexes := []int{0, 1, 3}
 
 	exp := []string{
-		"2022-02-20T11:42:57+07:00 099e593 feature: add gelp squashto (#2)",
-		"2022-02-19T19:28:03+07:00 3b16259 checkpoint for squash new",
-		"2022-02-19T18:05:00+07:00 asd123", // Empty commit message, intentionally tested.
+		"099e593",
+		"3b16259",
+		"asd123",
 	}
 	actual := PickRevisionsFromCommits(commits, indexes)
 

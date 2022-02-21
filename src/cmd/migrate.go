@@ -3,6 +3,8 @@ package gelp
 import (
 	"errors"
 	"fmt"
+	"io"
+	"sort"
 	"strings"
 
 	"github.com/fatih/color"
@@ -11,7 +13,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var MigrateBaseBranch string
+// Flag types.
+// Using camel-case because this is local.
+type MigrateModeType int
+
+const (
+	MigrateModeSingle MigrateModeType = iota + 1
+	MigrateModeMultiple
+	MigrateModeRange
+)
+
+// Flags.
+var migrateBaseBranch string
+var migrateMode string
+var migrateWithDate bool
 
 // Root command.
 var migrateCmd = &cobra.Command{
@@ -41,44 +56,27 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		gitLog, err := helpers.ExecCommand("git log --oneline")
+		// Validate flag.
+		parsedMode, err := parseMigrateMode(migrateMode)
 		if err != nil {
 			panic(err)
 		}
 
-		// Select the start commit.
-		gitLogArray := strings.Split(gitLog, "\n")
-		prompt := promptui.Select{
-			Label: "Select start commit to migrate",
-			Items: gitLogArray,
+		// Get list of commits.
+		gitLog, err := helpers.ExecCommand("git log --date=iso-strict --pretty='format:%cd %h %s'")
+		if err != nil {
+			panic(err)
 		}
+		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits(strings.Split(gitLog, "\n"), migrateWithDate)
 
-		_, startCommit, err := prompt.Run()
+		// Use prompt to get inputs, then resolve the commits.
+		revisions, err := ResolveRevisionsFromMigratePrompt(gitLogArray, parsedMode, nil)
 		if err != nil {
 			panic(err)
 		}
 
-		// Colorize the selected commit.
-		endGitLogArray := gitLogArray
-
-		for i, commit := range endGitLogArray {
-			if commit == startCommit {
-				endGitLogArray[i] = color.New(color.BgWhite).Sprint(commit)
-			}
-		}
-
-		// Select the end commit.
-		prompt = promptui.Select{
-			Label: "Select end commit to migrate",
-			Items: endGitLogArray,
-		}
-
-		_, endCommit, err := prompt.Run()
-		if err != nil {
-			panic(err)
-		}
-
-		err = helpers.Migrate(args[0], MigrateBaseBranch, startCommit, endCommit)
+		// Migrate.
+		err = helpers.Migrate(args[0], migrateBaseBranch, revisions)
 		if err != nil {
 			panic(err)
 		}
@@ -86,5 +84,133 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 }
 
 func init() {
-	migrateCmd.Flags().StringVarP(&MigrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	migrateCmd.Flags().StringVarP(&migrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	migrateCmd.Flags().StringVarP(&migrateMode, "mode", "m", "single", "The commit picking mode: single, multiple, or range. Defaults to single.")
+	migrateCmd.Flags().BoolVarP(&migrateWithDate, "date", "d", false, "Show the date of each commit when picking commit(s).")
+}
+
+// Semi-helper functions.
+func ResolveRevisionsFromMigratePrompt(gitLogArray []string, parsedMode MigrateModeType, reader []io.ReadCloser) ([]string, error) {
+	// Start picking commits.
+	var pickedIndexes []int
+	var currentReader io.ReadCloser
+	currentReaderIdx := 0
+
+	if reader != nil {
+		currentReader = reader[currentReaderIdx]
+	}
+
+	switch parsedMode {
+	case MigrateModeMultiple:
+		{
+			// If it is "multiple", we append the "Finish picking commits" option.
+			gitLogArray = append([]string{"-- Finish picking commits --"}, gitLogArray...)
+
+			for {
+				prompt := promptui.Select{
+					Label: "Select commits to migrate (picked commits will be reordered by date and deduplicated)",
+					Items: gitLogArray,
+					Stdin: currentReader,
+				}
+				pickedIndex, _, err := prompt.Run()
+
+				if err != nil {
+					return nil, err
+				}
+
+				if pickedIndex != 0 {
+					// Only append if the picked index is not 0 (the "Finish picking commits" option).
+					pickedIndexes = append(pickedIndexes, pickedIndex)
+				} else {
+					// When picked index is 0, break out from the loop.
+					break
+				}
+
+				if reader != nil && currentReaderIdx+1 < len(reader) {
+					currentReaderIdx++
+					currentReader = reader[currentReaderIdx]
+				}
+			}
+
+			pickedIndexes = helpers.GetUniqueIntegers(pickedIndexes)
+		}
+	case MigrateModeSingle:
+		{
+			// Select a single commit.
+			prompt := promptui.Select{
+				Label: "Select a commit to migrate",
+				Items: gitLogArray,
+				Stdin: currentReader,
+			}
+
+			pickedIndex, _, err := prompt.Run()
+			if err != nil {
+				return nil, err
+			}
+
+			pickedIndexes = append(pickedIndexes, pickedIndex)
+		}
+	case MigrateModeRange:
+		{
+			// Select the start commit.
+			prompt := promptui.Select{
+				Label: "Select the start commit (order doesn't matter)",
+				Items: gitLogArray,
+				Stdin: currentReader,
+			}
+
+			startCommitIndex, _, err := prompt.Run()
+			if err != nil {
+				return nil, err
+			}
+
+			// Increment the reader.
+			if reader != nil {
+				currentReader = reader[currentReaderIdx+1]
+			}
+
+			// Select the end commit.
+			prompt = promptui.Select{
+				Label: "Select the end commit (order doesn't matter)",
+				Items: gitLogArray,
+				Stdin: currentReader,
+			}
+
+			endCommitIndex, _, err := prompt.Run()
+			if err != nil {
+				return nil, err
+			}
+
+			// Switch the index, if the index is bigger.
+			if startCommitIndex <= endCommitIndex {
+				startCommitIndex, endCommitIndex = endCommitIndex, startCommitIndex
+			}
+
+			pickedIndexes = helpers.GetRangeArrayFromTwoIntegers(startCommitIndex, endCommitIndex)
+		}
+	}
+
+	// Sort the indexes from old to new (the bigger the index, the older they are).
+	sort.Slice(pickedIndexes, func(i, j int) bool {
+		return pickedIndexes[i] > pickedIndexes[j]
+	})
+
+	// Extract commits from the picked indexes.
+	return helpers.PickRevisionsFromCommits(gitLogArray, pickedIndexes), nil
+}
+
+// Helper functions.
+var migrateModeMap = map[string]MigrateModeType{
+	"single":   MigrateModeSingle,
+	"multiple": MigrateModeMultiple,
+	"range":    MigrateModeRange,
+}
+
+func parseMigrateMode(mode string) (MigrateModeType, error) {
+	result, ok := migrateModeMap[mode]
+	if !ok {
+		return -1, errors.New("not found")
+	}
+
+	return result, nil
 }

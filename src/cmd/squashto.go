@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var SquashNewBaseBranch string
+var squashNewBaseBranch string
 
 // Root command.
 var squashToCmd = &cobra.Command{
@@ -40,7 +40,7 @@ As an important note, "gelp squash" doesn't automatically resolve conflicts.`,
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		err := helpers.Squashto(args[0], SquashNewBaseBranch)
+		err := helpers.Squashto(args[0], squashNewBaseBranch)
 		if err != nil {
 			panic(err)
 		}
@@ -48,5 +48,5 @@ As an important note, "gelp squash" doesn't automatically resolve conflicts.`,
 }
 
 func init() {
-	squashToCmd.Flags().StringVarP(&SquashNewBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	squashToCmd.Flags().StringVarP(&squashNewBaseBranch, "base", "b", "main", "The base branch used for the new branch")
 }
