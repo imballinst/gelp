@@ -1,12 +1,11 @@
-package gelp
+package helpers
 
 import (
 	"fmt"
-	"os"
 )
 
 func GetVersion() string {
-	version := os.Getenv("version")
+	version := Version
 	if version == "" {
 		version = "dev"
 	}

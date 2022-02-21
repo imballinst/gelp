@@ -1,6 +1,6 @@
 // This file should be tested in the end-to-end test.
 // Testing this in unit test is a pain.
-package gelp
+package helpers
 
 import (
 	"fmt"

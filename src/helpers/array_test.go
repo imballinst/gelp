@@ -1,4 +1,4 @@
-package gelp
+package helpers
 
 import (
 	"fmt"

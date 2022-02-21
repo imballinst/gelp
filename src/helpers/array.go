@@ -1,4 +1,4 @@
-package gelp
+package helpers
 
 func GetUniqueIntegers(values []int) []int {
 	var includedInts = map[int]bool{}

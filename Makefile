@@ -7,5 +7,5 @@ test:
 
 .PHONY: build
 build:
-	@go build -ldflags "-X main.version=$(last_tag)" -o publish/gelp main.go
+	@go build -ldflags "-X 'github.com/imballinst/gelp/src/helpers.Version=$(last_tag)'" -o publish/gelp main.go
 
