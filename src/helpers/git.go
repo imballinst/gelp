@@ -59,25 +59,25 @@ func ExtractRevisionAndTitleFromCommits(commits []string, isWithDate bool) []str
 	var result []string
 
 	for _, commit := range commits {
-		revisionAndMessage := strings.SplitN(commit, " ", 3)
+		commitSplitArray := strings.SplitN(commit, " ", 3)
 		var entry string
 		var commitTitle string
 
 		// Check the length of the split string.
 		// There can be a chance where the commit title is empty.
-		if len(revisionAndMessage) == 2 {
+		if len(commitSplitArray) == 2 {
 			// Has only 2 segments (the commit title is empty).
 			commitTitle = "(no commit title)"
 		} else {
 			// Has 3 segments.
-			commitTitle = revisionAndMessage[2]
+			commitTitle = commitSplitArray[2]
 		}
 
 		// Depending on the `isWithDate` flag, change entry format.
 		if isWithDate {
-			entry = fmt.Sprintf("%s: %s (%s)", revisionAndMessage[1], commitTitle, revisionAndMessage[0])
+			entry = fmt.Sprintf("%s: %s (%s)", commitSplitArray[1], commitTitle, commitSplitArray[0])
 		} else {
-			entry = fmt.Sprintf("%s: %s", revisionAndMessage[1], commitTitle)
+			entry = fmt.Sprintf("%s: %s", commitSplitArray[1], commitTitle)
 		}
 
 		result = append(result, entry)
@@ -86,11 +86,16 @@ func ExtractRevisionAndTitleFromCommits(commits []string, isWithDate bool) []str
 	return result
 }
 
+// Pick only the revisions from this format (for example):
+// 099e593: feature: add gelp squashto (#2) (2022-02-20T11:42:57+07:00)
+// 3b16259: checkpoint for squash new (2022-02-19T19:28:03+07:00)
+// f38d9ee: remove unused (2022-02-19T19:05:00+07:00)"
 func PickRevisionsFromCommits(commits []string, indexes []int) []string {
 	var revisions []string
 
 	for _, index := range indexes {
-		revisions = append(revisions, commits[index])
+		commitSplitArray := strings.SplitN(commits[index], ": ", 2)
+		revisions = append(revisions, commitSplitArray[0])
 	}
 
 	return revisions
