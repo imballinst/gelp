@@ -7,7 +7,7 @@ import path from 'path';
 
 const OWNER = process.env.OWNER || 'imballinst';
 const REPO = process.env.REPO || 'gelp';
-const FILENAME = process.env.FILENAME || 'gelp-linux-amd64.tar.gz';
+const FILENAME = process.env.FILENAME || 'gelp-linux-amd64';
 
 async function main() {
   const octokit = new Octokit({ auth: process.env.RELEASE_TOKEN });

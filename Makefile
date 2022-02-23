@@ -13,4 +13,3 @@ build:
 compress:
 	@chmod +x publish/gelp-linux-amd64
 	@upx -1 -q publish/gelp-linux-amd64
-	@tar -czvf publish/gelp-linux-amd64.tar.gz publish/gelp-linux-amd64
