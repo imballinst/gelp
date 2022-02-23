@@ -7,6 +7,9 @@ test:
 
 .PHONY: build
 build:
-	@go build -ldflags "-s -w -X 'github.com/imballinst/gelp/src/helpers.Version=$(last_tag)'" -o publish/gelp main.go
+	@GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X 'github.com/imballinst/gelp/src/helpers.Version=$(last_tag)'" -o publish/gelp main.go
+
+.PHONY: compress
+compress:
 	@chmod +x publish/gelp
 	@upx -1 -q publish/gelp
