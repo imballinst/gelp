@@ -8,4 +8,5 @@ test:
 .PHONY: build
 build:
 	@go build -ldflags "-s -w -X 'github.com/imballinst/gelp/src/helpers.Version=$(last_tag)'" -o publish/gelp main.go
+	@chmod +x publish/gelp
 	@upx -1 -q publish/gelp
