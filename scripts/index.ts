@@ -13,7 +13,6 @@ async function main() {
 
   let latestTag = '';
   let releaseId = -1;
-  let isLatestPrerelease = false;
   let isDraft = false;
   let previousBody = '';
   let preId: string | undefined = undefined;
@@ -27,7 +26,6 @@ async function main() {
     });
     releaseId = response.data[0].id;
     latestTag = response.data[0].tag_name;
-    isLatestPrerelease = response.data[0].prerelease;
     isDraft = response.data[0].draft;
     previousBody = response.data[0].body || '';
 

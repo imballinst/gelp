@@ -36,3 +36,4 @@ jobs:
       - run: yarn --cwd scripts run-publish
         env:
           RELEASE_TOKEN: ${{ github.token }}
+          REPO: test-releases
