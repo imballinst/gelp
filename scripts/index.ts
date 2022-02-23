@@ -7,6 +7,7 @@ import path from 'path';
 
 const OWNER = process.env.OWNER || 'imballinst';
 const REPO = process.env.REPO || 'gelp';
+const FILENAME = process.env.FILENAME || 'gelp-linux-amd64.tar.gz';
 
 async function main() {
   const octokit = new Octokit({ auth: process.env.RELEASE_TOKEN });
@@ -59,9 +60,7 @@ async function main() {
       release_id: releaseId
     });
 
-    const gelp = releaseAssets.data.find(
-      (entry) => entry.name === 'gelp-linux-amd64'
-    );
+    const gelp = releaseAssets.data.find((entry) => entry.name === FILENAME);
 
     if (gelp !== undefined) {
       // Delete the asset first before re-uploading it.
@@ -74,9 +73,9 @@ async function main() {
 
     await octokit.repos.uploadReleaseAsset({
       data: (
-        await fs.readFile(path.join(__dirname, '../publish/gelp'))
+        await fs.readFile(path.join(__dirname, `../publish/${FILENAME}`))
       ).toString(),
-      name: 'gelp-linux-amd64',
+      name: FILENAME,
       owner: OWNER,
       repo: REPO,
       release_id: releaseId
@@ -108,9 +107,9 @@ async function main() {
     });
     await octokit.repos.uploadReleaseAsset({
       data: (
-        await fs.readFile(path.join(__dirname, '../publish/gelp'))
+        await fs.readFile(path.join(__dirname, `../publish/${FILENAME}`))
       ).toString(),
-      name: 'gelp-linux-amd64',
+      name: FILENAME,
       owner: OWNER,
       repo: REPO,
       release_id: response.data.id

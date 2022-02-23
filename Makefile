@@ -11,5 +11,6 @@ build:
 
 .PHONY: compress
 compress:
-	@chmod +x publish/gelp
-	@upx -1 -q publish/gelp
+	@chmod +x publish/gelp-linux-amd64
+	@upx -1 -q publish/gelp-linux-amd64
+	@tar -czvf publish/gelp-linux-amd64.tar.gz publish/gelp-linux-amd64
