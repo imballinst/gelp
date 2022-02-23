@@ -27,6 +27,7 @@ jobs:
         with:
           node-version: 16.x
           cache: yarn
+          cache-dependency-path: 'scripts/**/yarn.lock'
       - name: Install upx-ucl for binary compressing
         run: sudo apt install upx-ucl
       - run: make build
