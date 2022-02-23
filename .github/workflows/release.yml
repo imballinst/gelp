@@ -33,3 +33,5 @@ jobs:
       - run: make compress
       - run: yarn --cwd scripts --frozen-lockfile
       - run: yarn --cwd scripts run-publish
+        env:
+          RELEASE_TOKEN: ${{ github.token }}
