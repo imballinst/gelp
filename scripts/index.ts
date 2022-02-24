@@ -39,6 +39,7 @@ async function main() {
   } catch (err) {
     console.error(err);
     latestTag = 'v0.0.0';
+    preId = 'alpha';
   }
 
   if (isDraft) {
