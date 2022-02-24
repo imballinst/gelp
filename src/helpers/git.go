@@ -47,6 +47,27 @@ func Squashto(targetBranch string, baseBranch string) error {
 	return nil
 }
 
+func Postmerge(remote, baseBranch string) error {
+	currentBranchOutput, err := doAndLog("postmerge", "git rev-parse --abbrev-ref HEAD")
+	if err != nil {
+		return err
+	}
+
+	// Checkout to base branch.
+	err = checkoutBranch("postmerge", baseBranch)
+	if err != nil {
+		return err
+	}
+
+	// Pull the changes.
+	_, err = doAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Semi-helper functions. Used to create arguments passed to functions above.
 // These functions are exported so that we can compose the functions better.
 //
@@ -111,6 +132,15 @@ func log(label string, text string) {
 	fmt.Printf("gelp %s: %s\n", label, text)
 }
 
+func checkoutBranch(label, targetBranch string) error {
+	_, err := doAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranch string) error {
 	// Check if the branch exists.
 	verifyBranchExistsCommand := fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)
@@ -127,7 +157,7 @@ func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranc
 		}
 	} else {
 		// Branch exists.
-		_, err = doAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
+		err = checkoutBranch(label, targetBranch)
 		if err != nil {
 			return err
 		}
