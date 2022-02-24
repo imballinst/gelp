@@ -60,7 +60,13 @@ func Postmerge(remote, baseBranch string) error {
 	}
 
 	// Pull the changes.
-	_, err = doAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
+	_, err = doAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, baseBranch))
+	if err != nil {
+		return err
+	}
+
+	// Delete the old branch.
+	_, err = doAndLog("postmerge", fmt.Sprintf("git branch -D %s", currentBranchOutput))
 	if err != nil {
 		return err
 	}
