@@ -84,9 +84,9 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 }
 
 func init() {
-	migrateCmd.Flags().StringVarP(&migrateBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	migrateCmd.Flags().StringVarP(&migrateBaseBranch, "base", "b", "main", "The base branch used for the new branch. Defaults to main.")
 	migrateCmd.Flags().StringVarP(&migrateMode, "mode", "m", "single", "The commit picking mode: single, multiple, or range. Defaults to single.")
-	migrateCmd.Flags().BoolVarP(&migrateWithDate, "date", "d", false, "Show the date of each commit when picking commit(s).")
+	migrateCmd.Flags().BoolVarP(&migrateWithDate, "date", "d", false, "Show the date of each commit when picking commit(s). Defaults to false.")
 }
 
 // Semi-helper functions.

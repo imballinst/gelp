@@ -48,5 +48,5 @@ As an important note, "gelp squash" doesn't automatically resolve conflicts.`,
 }
 
 func init() {
-	squashToCmd.Flags().StringVarP(&squashNewBaseBranch, "base", "b", "main", "The base branch used for the new branch")
+	squashToCmd.Flags().StringVarP(&squashNewBaseBranch, "base", "b", "main", "The base branch used for the new branch. Defaults to main.")
 }
