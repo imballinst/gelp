@@ -27,7 +27,7 @@ func Migrate(targetBranch string, baseBranch string, revisions []string) error {
 }
 
 func Squashto(targetBranch string, baseBranch string) error {
-	currentBranchOutput, err := doAndLog("squashto", "git rev-parse --abbrev-ref HEAD")
+	currentBranchOutput, err := getCurrentBranch("squashto")
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func Squashto(targetBranch string, baseBranch string) error {
 }
 
 func Postmerge(remote, baseBranch string) error {
-	currentBranchOutput, err := doAndLog("postmerge", "git rev-parse --abbrev-ref HEAD")
+	currentBranchOutput, err := getCurrentBranch("postmerge")
 	if err != nil {
 		return err
 	}
@@ -76,6 +76,22 @@ func Postmerge(remote, baseBranch string) error {
 
 func Fresh(targetBranch, baseBranch string) error {
 	return checkoutNewBranch("fresh", targetBranch, baseBranch)
+}
+
+func UpdateBranch(remote, targetBranch string) error {
+	currentBranchOutput, err := getCurrentBranch("updatebranch")
+	if err != nil {
+		return err
+	}
+
+	if currentBranchOutput == targetBranch || targetBranch == "" {
+		// When target branch is the same or is empty, then we update the current branch instead.
+		_, err = doAndLog("updatebranch", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
+		return err
+	}
+
+	_, err = doAndLog("updatebranch", fmt.Sprintf("git fetch %s %s:%s", remote, targetBranch, targetBranch))
+	return err
 }
 
 // Semi-helper functions. Used to create arguments passed to functions above.
@@ -182,4 +198,13 @@ func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranc
 	}
 
 	return nil
+}
+
+func getCurrentBranch(label string) (string, error) {
+	currentBranchOutput, err := doAndLog(label, "git rev-parse --abbrev-ref HEAD")
+	if err != nil {
+		return "", err
+	}
+
+	return currentBranchOutput, nil
 }

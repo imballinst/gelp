@@ -39,6 +39,8 @@ func init() {
 	rootCmd.AddCommand(squashToCmd)
 	rootCmd.AddCommand(postMergeCmd)
 	rootCmd.AddCommand(freshCmd)
+	rootCmd.AddCommand(updateBranchCmd)
+	// TODO(imballinst): add prune command.
 }
 
 func Execute() {
