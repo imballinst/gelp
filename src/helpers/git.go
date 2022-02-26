@@ -74,6 +74,10 @@ func Postmerge(remote, baseBranch string) error {
 	return nil
 }
 
+func Fresh(targetBranch, baseBranch string) error {
+	return checkoutNewBranch("fresh", targetBranch, baseBranch)
+}
+
 // Semi-helper functions. Used to create arguments passed to functions above.
 // These functions are exported so that we can compose the functions better.
 //
@@ -147,6 +151,15 @@ func checkoutBranch(label, targetBranch string) error {
 	return nil
 }
 
+func checkoutNewBranch(label, targetBranch, baseBranch string) error {
+	_, err := doAndLog(label, fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranch string) error {
 	// Check if the branch exists.
 	verifyBranchExistsCommand := fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)
@@ -156,8 +169,7 @@ func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranc
 		log(label, "Branch doesn't exist, creating one...")
 
 		// Create a new branch, if the target branch doesn't exist.
-		createNewBranchCommand := fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch)
-		_, err = doAndLog(label, createNewBranchCommand)
+		err = checkoutNewBranch(label, targetBranch, baseBranch)
 		if err != nil {
 			return err
 		}

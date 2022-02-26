@@ -34,7 +34,7 @@ As an important note, "gelp squash" doesn't automatically resolve conflicts.`,
 		color.BlueString("gelp squashto hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.New("`gelp squashto` command needs 1 argument: target_branch")
+			return errors.New("`gelp squashto` command needs 1 argument: base_branch")
 		}
 
 		return nil

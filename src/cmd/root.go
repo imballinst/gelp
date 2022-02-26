@@ -38,6 +38,7 @@ func init() {
 	rootCmd.AddCommand(migrateCmd)
 	rootCmd.AddCommand(squashToCmd)
 	rootCmd.AddCommand(postMergeCmd)
+	rootCmd.AddCommand(freshCmd)
 }
 
 func Execute() {
