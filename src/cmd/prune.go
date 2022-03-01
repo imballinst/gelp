@@ -46,17 +46,29 @@ gelp will also gives you a confirmation before deleting, so it acts as a "safegu
 			panic(err)
 		}
 
+		fmt.Printf("\n%s\n\n", color.CyanString(output))
+
+		validate := func(s string) error {
+			if len(s) == 1 && strings.Contains("YyNn", s) || len(s) == 0 {
+				return nil
+			}
+			return errors.New("invalid input")
+		}
 		prompt := promptui.Prompt{
-			Label: fmt.Sprintf("The following branches will be deleted:\n%s\n%s",
-				color.CyanString(output),
-				"Type \"y/Y\" to proceed deleting then press Enter, else \"N/n\""),
+			Label:     "Prune the listed branches above",
+			IsConfirm: true,
+			Validate:  validate,
+			Default:   "y",
 		}
 		result, err := prompt.Run()
-		if err != nil {
+		isErrAbort := errors.Is(err, promptui.ErrAbort)
+
+		if err != nil && !isErrAbort {
+			// Abort error only.
 			panic(err)
 		}
 
-		if result != "" || strings.ToLower(result) != "y" {
+		if strings.ToLower(result) == "n" {
 			helpers.Log("prune", "branch pruning cancelled")
 			return
 		}
