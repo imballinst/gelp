@@ -44,8 +44,6 @@ func ExecCommand(commandWithArgs string) (string, error) {
 	err := cmd.Run()
 
 	outString := strings.Trim(out.String(), "\n")
-	fmt.Println(array)
-	fmt.Println(outString)
 	if err != nil {
 		// Error logging.
 		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())

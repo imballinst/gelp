@@ -23,7 +23,7 @@ Git still stores the "remote branch" locally (perhaps for safety measures). This
 %s
 
 There might be a lot of dangling remote branches (marked in red) that has been deleted in the remote Git repository.
-"gelp prune" is a two-in-one command, which executes "git prune remote <remote> --dry-run" and "git prune remote <remote>".
+"gelp prune" is a two-in-one command, which executes "git remote prune <remote> --dry-run" and "git remote prune <remote>".
 gelp will also gives you a confirmation before deleting, so it acts as a "safeguard".
 `, color.CyanString("git branch -a")),
 	Example: fmt.Sprintf(`1) Prunes dangling remote "origin" branches
@@ -41,7 +41,7 @@ gelp will also gives you a confirmation before deleting, so it acts as a "safegu
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		output, err := helpers.DoAndLog("prune", fmt.Sprintf("git prune remote %s --dry-run", pruneRemote))
+		output, err := helpers.DoAndLog("prune", fmt.Sprintf("git remote prune %s --dry-run", pruneRemote))
 		if err != nil {
 			panic(err)
 		}
@@ -61,7 +61,7 @@ gelp will also gives you a confirmation before deleting, so it acts as a "safegu
 			return
 		}
 
-		_, err = helpers.DoAndLog("prune", fmt.Sprintf("git prune remote %s", pruneRemote))
+		_, err = helpers.DoAndLog("prune", fmt.Sprintf("git remote prune %s", pruneRemote))
 		if err != nil {
 			panic(err)
 		}
