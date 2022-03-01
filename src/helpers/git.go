@@ -18,7 +18,7 @@ func Migrate(targetBranch string, baseBranch string, revisions []string) error {
 	cherrypickCommand := "git cherry-pick " + strings.Join(revisions, " ")
 
 	// Cherry-pick the commits.
-	_, err = doAndLog("migrate", cherrypickCommand)
+	_, err = DoAndLog("migrate", cherrypickCommand)
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func Squashto(targetBranch string, baseBranch string) error {
 	}
 
 	// Squash merge.
-	_, err = doAndLog("squashto", fmt.Sprintf("git merge --squash %s", currentBranchOutput))
+	_, err = DoAndLog("squashto", fmt.Sprintf("git merge --squash %s", currentBranchOutput))
 	if err != nil {
 		return err
 	}
@@ -60,13 +60,13 @@ func Postmerge(remote, baseBranch string) error {
 	}
 
 	// Pull the changes.
-	_, err = doAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, baseBranch))
+	_, err = DoAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, baseBranch))
 	if err != nil {
 		return err
 	}
 
 	// Delete the old branch.
-	_, err = doAndLog("postmerge", fmt.Sprintf("git branch -D %s", currentBranchOutput))
+	_, err = DoAndLog("postmerge", fmt.Sprintf("git branch -D %s", currentBranchOutput))
 	if err != nil {
 		return err
 	}
@@ -86,11 +86,11 @@ func UpdateBranch(remote, targetBranch string) error {
 
 	if currentBranchOutput == targetBranch || targetBranch == "" {
 		// When target branch is the same or is empty, then we update the current branch instead.
-		_, err = doAndLog("updatebranch", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
+		_, err = DoAndLog("updatebranch", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
 		return err
 	}
 
-	_, err = doAndLog("updatebranch", fmt.Sprintf("git fetch %s %s:%s", remote, targetBranch, targetBranch))
+	_, err = DoAndLog("updatebranch", fmt.Sprintf("git fetch %s %s:%s", remote, targetBranch, targetBranch))
 	return err
 }
 
@@ -149,17 +149,8 @@ func PickRevisionsFromCommits(commits []string, indexes []int) []string {
 }
 
 // Helper functions.
-func doAndLog(label string, command string) (string, error) {
-	log(label, command)
-	return ExecCommand(command)
-}
-
-func log(label string, text string) {
-	fmt.Printf("gelp %s: %s\n", label, text)
-}
-
 func checkoutBranch(label, targetBranch string) error {
-	_, err := doAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
+	_, err := DoAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
 	if err != nil {
 		return err
 	}
@@ -168,7 +159,7 @@ func checkoutBranch(label, targetBranch string) error {
 }
 
 func checkoutNewBranch(label, targetBranch, baseBranch string) error {
-	_, err := doAndLog(label, fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
+	_, err := DoAndLog(label, fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
 	if err != nil {
 		return err
 	}
@@ -179,10 +170,10 @@ func checkoutNewBranch(label, targetBranch, baseBranch string) error {
 func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranch string) error {
 	// Check if the branch exists.
 	verifyBranchExistsCommand := fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)
-	_, err := doAndLog(label, verifyBranchExistsCommand)
+	_, err := DoAndLog(label, verifyBranchExistsCommand)
 
 	if err != nil {
-		log(label, "Branch doesn't exist, creating one...")
+		Log(label, "Branch doesn't exist, creating one...")
 
 		// Create a new branch, if the target branch doesn't exist.
 		err = checkoutNewBranch(label, targetBranch, baseBranch)
@@ -201,7 +192,7 @@ func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranc
 }
 
 func getCurrentBranch(label string) (string, error) {
-	currentBranchOutput, err := doAndLog(label, "git rev-parse --abbrev-ref HEAD")
+	currentBranchOutput, err := DoAndLog(label, "git rev-parse --abbrev-ref HEAD")
 	if err != nil {
 		return "", err
 	}

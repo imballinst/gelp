@@ -25,8 +25,8 @@ otherwise the commits from the previously worked branch will be taken along to t
 
 2) Start fresh to "hotfix-1" branch using "dev" as HEAD
    %s`,
-		color.BlueString("gelp fresh hotfix"),
-		color.BlueString("gelp fresh hotfix --base dev")),
+		color.CyanString("gelp fresh hotfix"),
+		color.CyanString("gelp fresh hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("`gelp fresh` command needs 1 argument: base_branch")

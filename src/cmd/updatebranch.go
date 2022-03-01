@@ -26,9 +26,9 @@ can be handy.`,
 	 
 3) Update the "dev" branch to be updated from the remote "upstream"
    %s`,
-		color.BlueString("gelp updatebranch"),
-		color.BlueString("gelp updatebranch dev"),
-		color.BlueString("gelp updatebranch dev --remote upstream")),
+		color.CyanString("gelp updatebranch"),
+		color.CyanString("gelp updatebranch dev"),
+		color.CyanString("gelp updatebranch dev --remote upstream")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		return nil
 	},

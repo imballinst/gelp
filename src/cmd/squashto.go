@@ -30,8 +30,8 @@ As an important note, "gelp squash" doesn't automatically resolve conflicts.`,
 
 2) Squashes the current changes to "hotfix" using base branch "dev"
    %s`,
-		color.BlueString("gelp squashto test-branch"),
-		color.BlueString("gelp squashto hotfix --base dev")),
+		color.CyanString("gelp squashto test-branch"),
+		color.CyanString("gelp squashto hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("`gelp squashto` command needs 1 argument: base_branch")
