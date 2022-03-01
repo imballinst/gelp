@@ -30,7 +30,7 @@ the local branch doesn't matter anymore, hence what we usually do is:
 2) Update "dev" branch after merging a PR to "dev" in remote forked repository
    %s
 
-2) Update "dev" branch after merging a PR to "dev" in remote repository
+3) Update "dev" branch after merging a PR to "dev" in remote repository
    %s`,
 		color.CyanString("gelp postmerge"),
 		color.CyanString("gelp postmerge --base dev"),

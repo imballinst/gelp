@@ -15,30 +15,27 @@ var pruneRemote string
 
 // Root command.
 var pruneCmd = &cobra.Command{
-	Use:   "postmerge",
-	Short: "Go to the base branch, pulls the latest changes, then deletes the previous branch",
-	Long: `Postmerge is used after you have merged a pull request in the remote. In that scenario,
-the local branch doesn't matter anymore, hence what we usually do is:
+	Use:   "prune",
+	Short: "Prunes the dangling remote branches in the local",
+	Long: fmt.Sprintf(`Prune is used when you have a lot of dangling remote branches. When you delete a local branch,
+Git still stores the "remote branch" locally (perhaps for safety measures). This can be checked with the command:
 
-- Checkout to the base branch with "git checkout {base}"
-- Pull the latest changes with "git pull {remote} {base}"
-- Delete the branch that was merged just now with "git branch -D {base}"
+%s
 
-"gelp postmerge" is a shorthand to do all 3 of these.`,
-	Example: fmt.Sprintf(`1) Update "main" branch after merging a PR to "main" in remote repository
+There might be a lot of dangling remote branches (marked in red) that has been deleted in the remote Git repository.
+"gelp prune" is a two-in-one command, which executes "git prune remote <remote> --dry-run" and "git prune remote <remote>".
+gelp will also gives you a confirmation before deleting, so it acts as a "safeguard".
+`, color.CyanString("git branch -a")),
+	Example: fmt.Sprintf(`1) Prunes dangling remote "origin" branches
    %s
 
-2) Update "dev" branch after merging a PR to "dev" in remote forked repository
-   %s
-
-2) Update "dev" branch after merging a PR to "dev" in remote repository
+2) Prunes dangling remote "upstream" branches
    %s`,
-		color.CyanString("gelp postmerge"),
-		color.CyanString("gelp postmerge --base dev"),
-		color.CyanString("gelp postmerge --base dev --remote upstream")),
+		color.CyanString("gelp prune"),
+		color.CyanString("gelp prune --origin upstream")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
-			return errors.New("`gelp postmerge` doesn't accept an argument. Please remove it")
+			return errors.New("`gelp prune` doesn't accept an argument. Please remove it")
 		}
 
 		return nil
