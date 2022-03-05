@@ -45,8 +45,7 @@ the latest commit and the latest commit's date. This enables you to recognize wh
 
 		t := gotabulate.Create(table)
 		t.SetAlign("left")
-		t.SetHeaders([]string{"Branch", "Title", "Date"})
-		fmt.Println(t.Render("plain"))
+		t.SetHeaders([]string{"Branch", "Last Commit Title", "Last Update Date"})
 		stringified := strings.ReplaceAll(t.Render("plain"), "\n", `\n`)
 		array := strings.Split(stringified, "\\n")
 
