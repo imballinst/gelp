@@ -41,6 +41,7 @@ func init() {
 	rootCmd.AddCommand(freshCmd)
 	rootCmd.AddCommand(updateBranchCmd)
 	rootCmd.AddCommand(pruneCmd)
+	rootCmd.AddCommand(branchCmd)
 }
 
 func Execute() {

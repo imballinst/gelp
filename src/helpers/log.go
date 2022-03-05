@@ -1,6 +1,8 @@
 package helpers
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func DoAndLog(label string, command string) (string, error) {
 	Log(label, command)

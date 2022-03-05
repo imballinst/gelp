@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/fatih/color"
 	helpers "github.com/imballinst/gelp/src/helpers"
@@ -63,11 +62,11 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		}
 
 		// Get list of commits.
-		gitLog, err := helpers.ExecCommand("git log --date=iso-strict --pretty='%cd %h %s'")
+		gitLog, err := helpers.GetCommitsFromSource("", -1)
 		if err != nil {
 			panic(err)
 		}
-		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits(strings.Split(gitLog, "\n"), migrateWithDate)
+		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits([]helpers.GitLog{gitLog}, migrateWithDate)
 
 		// Use prompt to get inputs, then resolve the commits.
 		revisions, err := ResolveRevisionsFromMigratePrompt(gitLogArray, parsedMode, nil)
