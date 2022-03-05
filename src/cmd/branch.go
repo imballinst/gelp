@@ -52,10 +52,13 @@ the latest commit and the latest commit's date. This enables you to recognize wh
 		var selectOptions []string
 		for idx, row := range array {
 			if idx%2 == 1 && idx > 1 {
-				selectOptions = append(selectOptions, row)
+				trimmed := strings.Trim(row, " ")
+				if len(trimmed) > 0 {
+					selectOptions = append(selectOptions, row)
+				}
 			}
 		}
-
+		fmt.Println(len(selectOptions))
 		commitFormat := "{{ . }}"
 		templates := &promptui.SelectTemplates{
 			Label:    "{{ . }}",
