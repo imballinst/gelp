@@ -4,8 +4,17 @@ package helpers
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+	"time"
 )
+
+type GitLog struct {
+	Date   string
+	Commit string
+	Title  string
+	Branch string
+}
 
 // Commands used in the CLI.
 func Migrate(targetBranch string, baseBranch string, revisions []string) error {
@@ -18,7 +27,7 @@ func Migrate(targetBranch string, baseBranch string, revisions []string) error {
 	cherrypickCommand := "git cherry-pick " + strings.Join(revisions, " ")
 
 	// Cherry-pick the commits.
-	_, err = doAndLog("migrate", cherrypickCommand)
+	_, err = DoAndLog("migrate", cherrypickCommand)
 	if err != nil {
 		return err
 	}
@@ -27,7 +36,7 @@ func Migrate(targetBranch string, baseBranch string, revisions []string) error {
 }
 
 func Squashto(targetBranch string, baseBranch string) error {
-	currentBranchOutput, err := doAndLog("squashto", "git rev-parse --abbrev-ref HEAD")
+	currentBranchOutput, err := getCurrentBranch("squashto")
 	if err != nil {
 		return err
 	}
@@ -39,7 +48,7 @@ func Squashto(targetBranch string, baseBranch string) error {
 	}
 
 	// Squash merge.
-	_, err = doAndLog("squashto", fmt.Sprintf("git merge --squash %s", currentBranchOutput))
+	_, err = DoAndLog("squashto", fmt.Sprintf("git merge --squash %s", currentBranchOutput))
 	if err != nil {
 		return err
 	}
@@ -48,30 +57,85 @@ func Squashto(targetBranch string, baseBranch string) error {
 }
 
 func Postmerge(remote, baseBranch string) error {
-	currentBranchOutput, err := doAndLog("postmerge", "git rev-parse --abbrev-ref HEAD")
+	currentBranchOutput, err := getCurrentBranch("postmerge")
 	if err != nil {
 		return err
 	}
 
 	// Checkout to base branch.
-	err = checkoutBranch("postmerge", baseBranch)
+	err = CheckoutBranch("postmerge", baseBranch)
 	if err != nil {
 		return err
 	}
 
 	// Pull the changes.
-	_, err = doAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, baseBranch))
+	_, err = DoAndLog("postmerge", fmt.Sprintf("git pull %s %s", remote, baseBranch))
 	if err != nil {
 		return err
 	}
 
 	// Delete the old branch.
-	_, err = doAndLog("postmerge", fmt.Sprintf("git branch -D %s", currentBranchOutput))
+	_, err = DoAndLog("postmerge", fmt.Sprintf("git branch -D %s", currentBranchOutput))
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func Fresh(targetBranch, baseBranch string) error {
+	return checkoutNewBranch("fresh", targetBranch, baseBranch)
+}
+
+func UpdateBranch(remote, targetBranch string) error {
+	currentBranchOutput, err := getCurrentBranch("updatebranch")
+	if err != nil {
+		return err
+	}
+
+	if currentBranchOutput == targetBranch || targetBranch == "" {
+		// When target branch is the same or is empty, then we update the current branch instead.
+		_, err = DoAndLog("updatebranch", fmt.Sprintf("git pull %s %s", remote, currentBranchOutput))
+		return err
+	}
+
+	_, err = DoAndLog("updatebranch", fmt.Sprintf("git fetch %s %s:%s", remote, targetBranch, targetBranch))
+	return err
+}
+
+func BranchList() ([]GitLog, error) {
+	branchListOutput, err := DoAndLog("branch", "git branch")
+	if err != nil {
+		return nil, err
+	}
+
+	branchListOutput = strings.Replace(branchListOutput, "*", "", -1)
+
+	var gitLogInfos = []GitLog{}
+	branchListArray := strings.Split(strings.Trim(branchListOutput, "\n"), "\n")
+
+	for _, branch := range branchListArray {
+		log, err := GetCommitsFromSource(strings.Trim(branch, " "), 1)
+		if err != nil {
+			return nil, err
+		}
+		gitLogInfos = append(gitLogInfos, log)
+	}
+
+	sort.Slice(gitLogInfos, func(i, j int) bool {
+		parsed1, err := time.Parse(DATE_FORMAT, gitLogInfos[i].Date)
+		if err != nil {
+			return false
+		}
+		parsed2, err := time.Parse(DATE_FORMAT, gitLogInfos[j].Date)
+		if err != nil {
+			return false
+		}
+
+		return parsed1.UnixMicro() > parsed2.UnixMicro()
+	})
+
+	return gitLogInfos, nil
 }
 
 // Semi-helper functions. Used to create arguments passed to functions above.
@@ -82,29 +146,28 @@ func Postmerge(remote, baseBranch string) error {
 // 2022-02-20T11:42:57+07:00 099e593 feature: add gelp squashto (#2)
 // 2022-02-19T19:28:03+07:00 3b16259 checkpoint for squash new
 // 2022-02-19T19:05:00+07:00 f38d9ee remove unused
-func ExtractRevisionAndTitleFromCommits(commits []string, isWithDate bool) []string {
+func ExtractRevisionAndTitleFromCommits(commits []GitLog, isWithDate bool) []string {
 	var result []string
 
 	for _, commit := range commits {
-		commitSplitArray := strings.SplitN(commit, " ", 3)
 		var entry string
 		var commitTitle string
 
 		// Check the length of the split string.
 		// There can be a chance where the commit title is empty.
-		if len(commitSplitArray) == 2 {
+		if commit.Title == "" {
 			// Has only 2 segments (the commit title is empty).
 			commitTitle = "(no commit title)"
 		} else {
 			// Has 3 segments.
-			commitTitle = commitSplitArray[2]
+			commitTitle = commit.Title
 		}
 
 		// Depending on the `isWithDate` flag, change entry format.
 		if isWithDate {
-			entry = fmt.Sprintf("%s: %s (%s)", commitSplitArray[1], commitTitle, commitSplitArray[0])
+			entry = fmt.Sprintf("%s: %s (%s)", commit.Commit, commitTitle, commit.Date)
 		} else {
-			entry = fmt.Sprintf("%s: %s", commitSplitArray[1], commitTitle)
+			entry = fmt.Sprintf("%s: %s", commit.Commit, commitTitle)
 		}
 
 		result = append(result, entry)
@@ -128,18 +191,46 @@ func PickRevisionsFromCommits(commits []string, indexes []int) []string {
 	return revisions
 }
 
+func GetCommitsFromSource(source string, num int) (GitLog, error) {
+	command := "git log --date=iso-strict --pretty='%cd %h %s'"
+	if source != "" {
+		command = fmt.Sprintf("%s --source %s", command, source)
+	}
+
+	if num != -1 {
+		command = fmt.Sprintf("%s -n %d", command, num)
+	}
+
+	var gitLogInfo = GitLog{}
+
+	gitLog, err := ExecCommand(command)
+	if err != nil {
+		return gitLogInfo, err
+	}
+
+	spl := strings.SplitN(gitLog, " ", 3)
+	gitLogInfo = GitLog{
+		Date:   spl[0],
+		Commit: spl[1],
+		Title:  spl[2],
+		Branch: source,
+	}
+
+	return gitLogInfo, nil
+}
+
+func CheckoutBranch(label, targetBranch string) error {
+	_, err := DoAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Helper functions.
-func doAndLog(label string, command string) (string, error) {
-	log(label, command)
-	return ExecCommand(command)
-}
-
-func log(label string, text string) {
-	fmt.Printf("gelp %s: %s\n", label, text)
-}
-
-func checkoutBranch(label, targetBranch string) error {
-	_, err := doAndLog(label, fmt.Sprintf("git checkout %s", targetBranch))
+func checkoutNewBranch(label, targetBranch, baseBranch string) error {
+	_, err := DoAndLog(label, fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch))
 	if err != nil {
 		return err
 	}
@@ -150,24 +241,32 @@ func checkoutBranch(label, targetBranch string) error {
 func checkoutOtherBranchOrCreateNew(label string, targetBranch string, baseBranch string) error {
 	// Check if the branch exists.
 	verifyBranchExistsCommand := fmt.Sprintf("git rev-parse --quiet --verify %s", targetBranch)
-	_, err := doAndLog(label, verifyBranchExistsCommand)
+	_, err := DoAndLog(label, verifyBranchExistsCommand)
 
 	if err != nil {
-		log(label, "Branch doesn't exist, creating one...")
+		Log(label, "Branch doesn't exist, creating one...")
 
 		// Create a new branch, if the target branch doesn't exist.
-		createNewBranchCommand := fmt.Sprintf("git checkout -b %s %s", targetBranch, baseBranch)
-		_, err = doAndLog(label, createNewBranchCommand)
+		err = checkoutNewBranch(label, targetBranch, baseBranch)
 		if err != nil {
 			return err
 		}
 	} else {
 		// Branch exists.
-		err = checkoutBranch(label, targetBranch)
+		err = CheckoutBranch(label, targetBranch)
 		if err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func getCurrentBranch(label string) (string, error) {
+	currentBranchOutput, err := DoAndLog(label, "git branch --show-current")
+	if err != nil {
+		return "", err
+	}
+
+	return currentBranchOutput, nil
 }

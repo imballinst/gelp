@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strings"
 
 	"github.com/fatih/color"
 	helpers "github.com/imballinst/gelp/src/helpers"
@@ -47,7 +46,7 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
    %s
 
 2) Migrate to "hotfix" using base branch "dev"
-   %s`, color.BlueString("gelp migrate test-branch"), color.BlueString("gelp migrate hotfix --base dev")),
+   %s`, color.CyanString("gelp migrate test-branch"), color.CyanString("gelp migrate hotfix --base dev")),
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.New("`gelp migrate` command needs 1 argument: target_branch")
@@ -63,11 +62,11 @@ using "git rebase" or "git reset", depending on the scenario. As an important no
 		}
 
 		// Get list of commits.
-		gitLog, err := helpers.ExecCommand("git log --date=iso-strict --pretty='format:%cd %h %s'")
+		gitLog, err := helpers.GetCommitsFromSource("", -1)
 		if err != nil {
 			panic(err)
 		}
-		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits(strings.Split(gitLog, "\n"), migrateWithDate)
+		gitLogArray := helpers.ExtractRevisionAndTitleFromCommits([]helpers.GitLog{gitLog}, migrateWithDate)
 
 		// Use prompt to get inputs, then resolve the commits.
 		revisions, err := ResolveRevisionsFromMigratePrompt(gitLogArray, parsedMode, nil)
