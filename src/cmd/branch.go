@@ -45,7 +45,7 @@ the latest commit and the latest commit's date. This enables you to recognize wh
 
 		t := gotabulate.Create(table)
 		t.SetAlign("left")
-		t.SetHeaders([]string{"Branch", "Last Commit Title", "Last Update Date"})
+		t.SetHeaders([]string{"Branch", "Last Commit Title", "Last Commit Date"})
 		stringified := strings.ReplaceAll(t.Render("plain"), "\n", `\n`)
 		array := strings.Split(stringified, "\\n")
 
@@ -58,7 +58,7 @@ the latest commit and the latest commit's date. This enables you to recognize wh
 				}
 			}
 		}
-		fmt.Println(len(selectOptions))
+
 		commitFormat := "{{ . }}"
 		templates := &promptui.SelectTemplates{
 			Label:    "{{ . }}",
